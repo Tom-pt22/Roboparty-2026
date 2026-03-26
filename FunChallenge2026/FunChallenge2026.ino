@@ -54,6 +54,7 @@ void loop() {
     while (one.readButton() != 0) {
       delay(10);
     }
+  }
 
   // State machine: each state represents a different task
   // Conditions in each state determine transitions
