@@ -120,6 +120,8 @@ void loop() {
 
 void go_forward_and_back(int speed, unsigned long duration_ms) {
   // Move forward
+  one.stop();
+  delay(100);
   one.move(speed, speed);
   delay(duration_ms);
   one.stop();
