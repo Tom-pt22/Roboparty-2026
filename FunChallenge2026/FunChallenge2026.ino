@@ -55,7 +55,7 @@ void loop() {
       ;
     }
   }
-elif (one.readButton() == 1) {
+else if (one.readButton() == 1) {
     curve_right_90(60, 30, 800); 
     // Wait for button release to avoid repeated retriggers
     while (one.readButton() == 1) {
