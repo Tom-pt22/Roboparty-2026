@@ -33,9 +33,21 @@ void loop() {
     average += sensor[i] / 8;
   }
 
+  // if button 2 is pressed, do a forward/back trip
+  if (one.readButton() == 2) {
+    // set duration_ms to the time you want the robot to travel forward and back
+    const unsigned long duration_ms = 1000;  // TODO: change this value
+    const int trip_speed = 80;               // TODO: change speed if needed
+    go_forward_and_back(trip_speed, duration_ms);
+
+    // Wait for button release to avoid repeated retriggers
+    while (one.readButton() == 2) {
+      delay(10);
+    }
+  }
+
   // State machine: each state represents a different task
   // Conditions in each state determine transitions
-
   switch (state) {
     case 0:  // Move forward
       move_forward_gradient();
@@ -82,14 +94,28 @@ void loop() {
 
       break;
   }
-} 
+}
+
+void go_forward_and_back(int speed, unsigned long duration_ms) {
+  // Move forward
+  one.move(speed, speed);
+  delay(duration_ms);
+  one.stop();
+  delay(100);
+
+  // Move backward same time (reverse)
+  one.move(-speed, -speed);
+  delay(duration_ms);
+  one.stop();
+}
 
 void move_forward_gradient() {
   // Move quickly at first and then slow down as time passes
   int speed = 85;
   for (int counter = 0; counter < 50; counter++) {
-    speed = pow(2,-counter / 10.0) * 85;  // Exponential decay of speed
+    speed = pow(2, -counter / 10.0) * 85;  // Exponential decay of speed
     one.move(speed, speed);
     delay(10);
+  }
 }
-}
+
