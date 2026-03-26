@@ -14,16 +14,13 @@ int counter = 0;
 int state = 0;
 float average = 0.0;
 int sensor[8];
-bool button2_executed = false;
 
 void setup() {
   one.spiConnect(SSPIN);                  // start SPI communication module
   one.setMinBatteryV(MINIMUM_BATTERY_V);  // battery discharge protection
   one.stop();                             // stop motors
   one.lcd1(" FUN CHALLENGE  ");           // print on LCD line 1
-  one.lcd2(" Press a button ");           // print on LCD line 2
-  while (one.readButton() == 0)
-    ;
+  one.lcd2("Press button 2");           // print on LCD line 2
 }
 
 void loop() {
@@ -57,61 +54,13 @@ void loop() {
     while (one.readButton() == 0) {
       ;
     }
-    
-    // Reset LCD and return to state machine
-    one.lcd1(" FUN CHALLENGE  ");
-    one.lcd2("                ");
-    one.stop();
-    return;  // Skip state machine for this loop iteration
   }
-
-  // State machine: each state represents a different task
-  // Conditions in each state determine transitions
-  switch (state) {
-    case 0:  // Move forward
-      move_forward_gradient();
-
-      // Stop if obstacle detected
-      if (one.readObstacleSensors() > 0) {
-        state = 1;
-      }
-
-      // Stop if all sensors see black line (avg > 900)
-      if (average > 900) {
-        state = 1;
-      }
-
-      break;
-
-    case 1:  // Move backward
-      one.move(-80, -80);
-
-      // Continue until all sensors see white (avg < 100)
-      if (average < 100) {
-        state = 2;
-      }
-
-      break;
-
-    case 2:  // Move backward (robot lifted)
-      one.move(-80, -80);
-
-      // Continue until sensors see black again (robot set down)
-      if (average > 900) {
-        state = 3;
-      }
-
-      break;
-
-    case 3:  // Move forward (robot on track)
-      move_forward_gradient();
-
-      // Return to forward movement when on white area
-      if (average < 100) {
-        state = 0;
-      }
-
-      break;
+elif (one.readButton() == 1) {
+    curve_right_90(60, 30, 800); 
+    // Wait for button release to avoid repeated retriggers
+    while (one.readButton() == 1) {
+      delay(10);
+    }
   }
 }
 
@@ -138,6 +87,20 @@ void move_forward_gradient() {
     one.move(speed, speed);
     delay(10);
   }
+  one.stop();
+}
+
+// Curve forward to the right until approximately 90 degrees from starting orientation
+// - straight_speed: left wheel speed
+// - slow_speed: right wheel speed (< straight_speed)
+// - duration_ms: run time to roughly reach 90 degrees (tune to your hardware)
+void curve_right_90(int straight_speed, int slow_speed, unsigned long duration_ms) {
+  one.stop();
+  delay(80);
+
+  one.move(straight_speed, slow_speed);
+  delay(duration_ms);
+
   one.stop();
 }
 
