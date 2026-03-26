@@ -34,6 +34,7 @@ void loop() {
     average += sensor[i] / 8;
   }
 
+  start:
   // Check if button 2 is pressed
   if (one.readButton() == 2) {
     // Stop current state machine movement
@@ -47,18 +48,14 @@ void loop() {
     // Wait for button release to avoid repeated retriggers
     while (one.readButton() == 2) {
       delay(10);
+    goto start;  // Return to the start of loop to recheck button state and avoid skipping state machine
     }
     
     // Wait for another button press to continue
     one.lcd1("Trip complete");
     one.lcd2("Press any button");
     while (one.readButton() == 0) {
-      delay(10);
-    }
-    
-    // Wait for button release
-    while (one.readButton() != 0) {
-      delay(10);
+      ;
     }
     
     // Reset LCD and return to state machine
@@ -141,5 +138,6 @@ void move_forward_gradient() {
     one.move(speed, speed);
     delay(10);
   }
+  one.stop();
 }
 
