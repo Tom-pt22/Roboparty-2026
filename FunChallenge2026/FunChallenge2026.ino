@@ -14,6 +14,7 @@ int counter = 0;
 int state = 0;
 float average = 0.0;
 int sensor[8];
+bool button2_triggered = false;
 
 void setup() {
   one.spiConnect(SSPIN);                  // start SPI communication module
@@ -34,7 +35,8 @@ void loop() {
   }
 
   // if button 2 is pressed, do a forward/back trip
-  if (one.readButton() == 2) {
+  if (one.readButton() == 2 || button2_triggered) {
+    button2_triggered = false;
     // set duration_ms to the time you want the robot to travel forward and back
     const unsigned long duration_ms = 1000;  // TODO: change this value
     const int trip_speed = 80;               // TODO: change speed if needed
@@ -123,7 +125,11 @@ void move_forward_gradient() {
   // Move quickly at first and then slow down as time passes
   int speed = 85;
   for (int counter = 0; counter < 50; counter++) {
-    speed = pow(2, -counter / 10.0) * 85;  // Exponential decay of speed
+    if (one.readButton() == 2) {
+      button2_triggered = true;
+      break;
+    }
+    speed = pow(2, -counter / 20.0) * 85;  // Exponential decay of speed (gentler decay)
     one.move(speed, speed);
     delay(10);
   }
