@@ -44,7 +44,16 @@ void loop() {
     while (one.readButton() == 2) {
       delay(10);
     }
-  }
+    // Wait for another button press to continue
+    one.lcd1("Trip complete");
+    one.lcd2("Press any button");
+    while (one.readButton() == 0) {
+      delay(10);
+    }
+    // Wait for button release
+    while (one.readButton() != 0) {
+      delay(10);
+    }
 
   // State machine: each state represents a different task
   // Conditions in each state determine transitions
