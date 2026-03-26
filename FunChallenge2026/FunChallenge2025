@@ -1,0 +1,138 @@
+#include <BnrOneA.h>   // Bot'n Roll ONE A library
+#include <EEPROM.h>    // EEPROM reading and writing
+#include <SPI.h>       // SPI communication library required by BnrOne.cpp
+BnrOneA one;           // declaration of object variable to control the Bot'n Roll ONE A
+#define SSPIN 2        // Slave Select (SS) pin for SPI communication
+#define FRENTE 0
+#define TRAS 1
+#define OBSTACULOS 2
+
+float batmin=10.5;  // safety voltage for discharging the battery
+
+#define LIMITS 100.0
+double kp=1.5, ki=0.0013, kd=0.70; //PID control gains <> Ganhos do controlo PID
+int vel=50;   //Max Speed <> Velocidade Máxima dos motores
+int vCurve=3; //Curve outside wheel max speed limit <> Limite de velocidade da roda exterior na curva
+
+int fsmState = FRENTE;
+
+int counter = 0; 
+int CHALLENGE_TIME = 90; 
+
+int contador = 0;
+
+int resultado = 0;
+int contador1 = 0;
+int estado = 0;
+
+int rangeL=0,rangeR=0;
+
+bool pode_ir_em_frente = false;
+
+int ler_linha(bool& linhaDetectada)
+{
+  int s0 = one.readAdc(0);
+  int s1 = one.readAdc(1);
+  int s2 = one.readAdc(2);
+  int s3 = one.readAdc(3);
+  int s4 = one.readAdc(4);
+  int s5 = one.readAdc(5);
+  int s6 = one.readAdc(6);
+  int s7 = one.readAdc(7);
+
+  linhaDetectada = s0 > 800 || s1 > 800 || s2 > 800 || s3 > 800 || s4 > 800 || s5 > 800 || s6 > 800 || s7 > 800;
+  return (s0 + s1 + s2 + s3 + s4 + s5 + s6 + s7)/8;
+}
+
+void setup() 
+{
+  one.spiConnect(SSPIN); // start the SPI communication module
+  one.stop(); 
+  one.minBat(8.5); // define de minimum battery voltage
+  one.obstacleEmitters(ON);
+  while (one.readButton()==0)
+  {}
+}
+
+void loop() 
+{
+  int pbutton=one.readButton(); // read the Push Button value
+  int botao = 0;
+  int line=0;    // The line sensor value <> Valor da linha no sensor
+  int lineRef=0; // Reference line value <> Valor de referência da linha
+  int erroP=0;   // Proportional error <> Erro proporcional
+  static double erroI=0.0; // Integral error <> Erro Integral
+  static int erroD=0.0;    // Differential error <> Erro diferencial 
+  static int erroPAnt=0;   // Previous proportional eror <> Erro proporcional anterior
+  double output=0.0;       // PID control output <> Resultado do controlo PID
+  
+  int velM1=0, velM2=0; // Motor speeds <> Velocidade dos motores
+  
+  line=-one.readLine();  // Read the line sensor value -100 to +100 <> Leitura do valor da linha -100 a +100
+
+  // se detetar linha preta
+  bool linhaDetetada = false;
+  resultado = ler_linha(linhaDetetada);
+    
+  if(linhaDetetada && fsmState == FRENTE)
+  {
+    fsmState = TRAS; // vai para o estado trás
+    contador = 0;
+  }
+
+  while (pbutton != 0)
+  {
+    one.stop();
+    resultado = ler_linha(linhaDetetada);
+    pbutton=one.readButton();
+    if (pbutton != 0)
+    {
+      botao = pbutton;
+      one.lcd1("pbutton: ", botao);
+    }
+    else
+    {
+      if(botao == 1 || botao == 2) // if button pressed is two
+      {
+        fsmState = FRENTE; // vai para o estado frente
+        pode_ir_em_frente = true;
+      }
+      else if(botao == 3) // if button pressed is two
+      {
+        fsmState = OBSTACULOS; // vai para o estado dir
+        pode_ir_em_frente = false;
+      }
+      one.lcd1("state: ", fsmState);
+    }
+  }
+
+  switch(fsmState)
+  {
+    case FRENTE:
+      one.move(90,90);// anda para a frente
+    break;
+
+    case TRAS:
+      contador += 1; 
+      one.move(30-contador,30-contador);//para trás
+    break;
+    case OBSTACULOS:
+      byte rangeL=one.readRangeL(); // read left obstacle sensor range 
+      byte rangeR=one.readRangeR(); // read right obstacle sensor range
+      one.move(80,80);
+      if(rangeL>15 || rangeR>15)
+      { 
+        one.move(-80,-80);
+        delay(1500);
+        one.move(0,0);
+        delay(500);
+        one.lcd1("PRONTOOOOOOOOOO");
+      }
+
+    delay(25);
+  break;
+        
+  }
+  
+      
+}
