@@ -14,7 +14,7 @@ int counter = 0;
 int state = 0;
 float average = 0.0;
 int sensor[8];
-bool button2_triggered = false;
+bool button2_executed = false;
 
 void setup() {
   one.spiConnect(SSPIN);                  // start SPI communication module
@@ -34,9 +34,11 @@ void loop() {
     average += sensor[i] / 8;
   }
 
-  // if button 2 is pressed, do a forward/back trip
-  if (one.readButton() == 2 || button2_triggered) {
-    button2_triggered = false;
+  // Check if button 2 is pressed
+  if (one.readButton() == 2) {
+    // Stop current state machine movement
+    one.stop();
+    
     // set duration_ms to the time you want the robot to travel forward and back
     const unsigned long duration_ms = 1000;  // TODO: change this value
     const int trip_speed = 80;               // TODO: change speed if needed
@@ -46,16 +48,24 @@ void loop() {
     while (one.readButton() == 2) {
       delay(10);
     }
+    
     // Wait for another button press to continue
     one.lcd1("Trip complete");
     one.lcd2("Press any button");
     while (one.readButton() == 0) {
       delay(10);
     }
+    
     // Wait for button release
     while (one.readButton() != 0) {
       delay(10);
     }
+    
+    // Reset LCD and return to state machine
+    one.lcd1(" FUN CHALLENGE  ");
+    one.lcd2("                ");
+    one.stop();
+    return;  // Skip state machine for this loop iteration
   }
 
   // State machine: each state represents a different task
@@ -125,10 +135,6 @@ void move_forward_gradient() {
   // Move quickly at first and then slow down as time passes
   int speed = 85;
   for (int counter = 0; counter < 50; counter++) {
-    if (one.readButton() == 2) {
-      button2_triggered = true;
-      break;
-    }
     speed = pow(2, -counter / 20.0) * 85;  // Exponential decay of speed (gentler decay)
     one.move(speed, speed);
     delay(10);
